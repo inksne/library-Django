@@ -77,6 +77,7 @@
     }
 
     .book {
+        position: relative;
         background-color:rgb(253, 184, 57);
         padding: 15px;
         margin-bottom: 15px;
@@ -112,18 +113,65 @@
         color: #888;
         font-size: 0.9em;
     }
+
+    .add-to-collection {
+        position: absolute; /* Позиционирование относительно .book */
+        bottom: 10px; /* Отступ от нижнего края */
+        right: 10px; /* Отступ от правого края */
+        background-color: dimgray;
+        color: white;
+        border: none;
+        padding: 0.5em 1em;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .add-to-collection:hover {
+        background-color: gray; /* Эффект при наведении */
+    }
   </style>
 </head>
 <body>
   <ul>
-    <li style="float: left"><a href="{% url 'authenticated' %}">Мои книги</a></li>
+    <li style="float: left"><a href="{% url 'authenticated' %}">Все книги</a></li>
+    <li style="float: left"><a href="{% url 'mybooks' %}">Моя коллекция</a></li>
     <li style="float: right"><a href="javascript:void(0);" onclick="logout()">Выйти</a></li>
+    <li style="float: right"><a href="{% url 'add_book' %}" class="add-book-btn">Добавить книгу</a></li>
   </ul>
   <div class="container">
       {% block content %}{% endblock %}
   </div>
   {% block scripts %}
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const buttons = document.querySelectorAll('.add-to-collection');
+            buttons.forEach(button => {
+                button.addEventListener('click', event => {
+                    event.preventDefault();
+                    const bookId = button.getAttribute('data-book-id');
+
+                    fetch(`/api/v1/add-to-collection/${bookId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            alert(data.message);
+                        } else if (data.error) {
+                            alert(`Ошибка: ${data.error}`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при добавлении книги в коллекцию:', error);
+                    });
+                });
+            });
+        });
 
         // функция для извлечения куки по имени
         function getCookie(name) {

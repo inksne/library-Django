@@ -1,13 +1,16 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
+from django.utils.decorators import method_decorator
 from rest_framework import generics
+from rest_framework.views import APIView, View
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import Book
+from .models import Book, UserBooks
 from .serializers import BookSerializer, RegisterSerializer
 from .decorators import jwt_required
+from .forms import BookForm
 
 
 class BookAPIViewPagination(PageNumberPagination):
@@ -25,11 +28,24 @@ class BookAPIView(generics.ListCreateAPIView):
 
 
 class BookAPIUpdateView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Book.objects.all()
+    queryset = UserBooks.objects.all()
     serializer_class = BookSerializer
     authentication_classes = (JWTAuthentication, )
     permission_classes = (IsAuthenticated, )
 
+
+class AddToCollectionAPIView(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def post(self, request, book_id):
+        user = request.user
+        try:
+            book = Book.objects.get(id=book_id)
+            UserBooks.objects.get_or_create(user=user, book=book)
+            return Response({"message": "Книга успешно добавлена в коллекцию!"}, status=201)
+        except Book.DoesNotExist:
+            return Response({"error": "Книга не найдена"}, status=404)
+        
 
 class RegisterView(generics.ListCreateAPIView):
     queryset = User.objects.all()
@@ -65,12 +81,19 @@ def AboutUsView(request):
     return render(request, 'about_us.html', context)
 
 
-# @jwt_required
-# def AuthenticatedView(request):
-#     context = {
-#         'title': 'Мои книги'
-#     }
-#     return render(request, 'mybooks.html', context)
+@jwt_required
+def BooksView(request):
+    jwt_authenticator = JWTAuthentication()
+    try:
+        user, _ = jwt_authenticator.authenticate(request)
+    except Exception:
+        return redirect('/login/')  
+
+    if not user or user.is_anonymous:
+        return redirect('/login/') 
+
+    books = Book.objects.all()
+    return render(request, 'allbooks.html', {'books': books, 'title': 'Все книги'})
 
 
 @jwt_required
@@ -79,10 +102,51 @@ def UserBooksView(request):
     try:
         user, _ = jwt_authenticator.authenticate(request)
     except Exception:
-        return redirect('/api/v1/login/')  
+        return redirect('/login/')  
 
     if not user or user.is_anonymous:
-        return redirect('/api/v1/login/') 
+        return redirect('/login/') 
 
-    books = Book.objects.filter(user=user)
-    return render(request, 'mybooks.html', {'books': books, 'title': 'Мои книги'})
+    user_books = UserBooks.objects.filter(user=user).select_related('book')
+    return render(request, 'mybooks.html', {
+        'title': 'Мои книги',
+        'user_books': [user_book.book for user_book in user_books]
+    })
+
+
+@method_decorator(jwt_required, name='dispatch')
+class AddBooksView(View):
+    template_name = 'addbooks.html'
+
+    def get(self, request):
+        jwt_authenticator = JWTAuthentication()
+        try:
+            user, _ = jwt_authenticator.authenticate(request)
+        except Exception:
+            return redirect('/login/')
+
+        if not user or user.is_anonymous:
+            return redirect('/login/')
+
+        form = BookForm()
+        return render(request, self.template_name, {'form': form, 'title': 'Добавление книги'})
+
+    def post(self, request):
+        jwt_authenticator = JWTAuthentication()
+        try:
+            user, _ = jwt_authenticator.authenticate(request)
+        except Exception:
+            return redirect('/login/')
+
+        if not user or user.is_anonymous:
+            return redirect('/login/')
+
+        # Обработка отправки формы
+        form = BookForm(request.POST)
+        if form.is_valid():
+            book = form.save(commit=False)
+            book.user = user  
+            book.save()
+            return redirect('/authenticated/')  
+
+        return render(request, self.template_name, {'form': form, 'title': 'Добавление книги'})

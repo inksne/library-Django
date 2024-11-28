@@ -2,14 +2,15 @@
 {% block content %}
 <title>{{ title }}</title>
 <div class="container">
-    {% if user_books %}
-        {% for book in user_books %}
+    {% if books %}
+        {% for book in books %}
             <div class="book">
                 <h2>{{ book.name }}</h2>
                 <p class="author">Автор книги: {{ book.author }}</p>
                 <p>Краткое описание: {{ book.description }}</p>
                 <p class="deployed_at">Дата публикации: {{ book.published_date }}</p>
                 <a href="{% url 'bookslist' %}">Читать полностью</a>
+                <button class="add-to-collection" data-book-id="{{ book.id }}">Добавить в коллекцию</button>
             </div>
         {% endfor %}
     {% else %}

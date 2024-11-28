@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Category(models.Model):
-    name = models.CharField(max_length=16)
+    name = models.CharField(max_length=24)
 
     def __str__(self):
         return self.name
@@ -18,8 +18,6 @@ class Book(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     language = models.CharField(max_length=10, null=True, blank=True)
-    rating = models.IntegerField(null=True, blank=True)
-    status = models.CharField(default='в наличии')
     user = models.ForeignKey(User, verbose_name='пользователь', on_delete=models.CASCADE)
 
     def __str__(self):
@@ -31,5 +29,8 @@ class UserBooks(models.Model):
     borrowed_at = models.DateTimeField(auto_now_add=True)
     returned_at = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        unique_together = ('user', 'book')
+
     def __str__(self):
-        return self.book.name
+        return f'{self.user.username} - {self.book.name}'
