@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<head>
+  <title>{% block title %}{{ title }}{% endblock %}</title>
+  <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'styles_base.css' %}">
+</head>
+<body>
+  <ul>
+    <li style="float: right"><a class="active" href="{% url 'register' %}">Зарегистрироваться</a></li>
+    <li style="float: left"><a class="active" href="{% url 'login' %}">Войти</a></li>
+    <li style="float: right"><a class="active" href="{% url 'about_us' %}">О нас</a></li>
+  </ul>
+  <div class="container">
+      {% block content %}{% endblock %}
+  </div>
+</body>

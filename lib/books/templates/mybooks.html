@@ -1,0 +1,22 @@
+{% extends "authenticated.html" %}
+{% block content %}
+<title>{{ title }}</title>
+<div class="container">
+    {% if books %}
+        {% for book in books %}
+            <div class="book">
+                <h2>{{ book.name }}</h2>
+                <p class="author">Автор книги: {{ book.author }}</p>
+                <p>Краткое описание: {{ book.description }}</p>
+                <p class="deployed_at">Дата публикации: {{ book.published_date }}</p>
+                <a href="{% url 'bookslist' %}">Читать полностью</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Нет доступных книг.</p>
+    {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+{% endblock %}
