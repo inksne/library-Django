@@ -65,6 +65,10 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
 
+    button:hover {
+        background-color: gray; 
+    }
+
     .container {
         width: 80%;
         margin: 0 auto;
@@ -115,9 +119,9 @@
     }
 
     .add-to-collection {
-        position: absolute; /* Позиционирование относительно .book */
-        bottom: 10px; /* Отступ от нижнего края */
-        right: 10px; /* Отступ от правого края */
+        position: absolute;
+        bottom: 10px; 
+        right: 10px; 
         background-color: dimgray;
         color: white;
         border: none;
@@ -127,7 +131,39 @@
     }
 
     .add-to-collection:hover {
-        background-color: gray; /* Эффект при наведении */
+        background-color: gray; 
+    }
+
+    .remove-from-collection {
+        position: absolute;
+        bottom: 10px; 
+        right: 10px; 
+        background-color: dimgray;
+        color: white;
+        border: none;
+        padding: 0.5em 1em;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .remove-from-collection:hover {
+        background-color: gray; 
+    }
+
+    .delete_book {
+        position: absolute;
+        top: 10px; 
+        right: 10px; 
+        background-color: dimgray;
+        color: white;
+        border: none;
+        padding: 0.5em 1em;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .delete_book:hover {
+        background-color: gray; 
     }
   </style>
 </head>
@@ -135,6 +171,7 @@
   <ul>
     <li style="float: left"><a href="{% url 'authenticated' %}">Все книги</a></li>
     <li style="float: left"><a href="{% url 'mybooks' %}">Моя коллекция</a></li>
+    <li><a href="{% url 'search' %}">Поиск</a></li>
     <li style="float: right"><a href="javascript:void(0);" onclick="logout()">Выйти</a></li>
     <li style="float: right"><a href="{% url 'add_book' %}" class="add-book-btn">Добавить книгу</a></li>
   </ul>
@@ -144,8 +181,9 @@
   {% block scripts %}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const buttons = document.querySelectorAll('.add-to-collection');
-            buttons.forEach(button => {
+            // добавление книги в коллекцию
+            const addButtons = document.querySelectorAll('.add-to-collection');
+            addButtons.forEach(button => {
                 button.addEventListener('click', event => {
                     event.preventDefault();
                     const bookId = button.getAttribute('data-book-id');
@@ -168,6 +206,36 @@
                     })
                     .catch(error => {
                         console.error('Ошибка при добавлении книги в коллекцию:', error);
+                    });
+                });
+            });
+
+            // удаление книги из коллекции
+            const removeButtons = document.querySelectorAll('.remove-from-collection');
+            removeButtons.forEach(button => {
+                button.addEventListener('click', event => {
+                    event.preventDefault();
+                    const bookId = button.getAttribute('data-book-id');
+
+                    fetch(`/api/v1/remove-from-collection/${bookId}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            alert(data.message);
+                        } else if (data.error) {
+                            alert(`Ошибка: ${data.error}`);
+                        }
+                    })
+                    
+                    .catch(error => {
+                        console.error('Ошибка при удалении книги из коллекции:', error);
                     });
                 });
             });
@@ -282,6 +350,35 @@
         } else {
             console.warn("Ни Access, ни Refresh токена не найдено. Требуется авторизация.");
         }
+
+        const removeButtons = document.querySelectorAll('.delete_book');
+            removeButtons.forEach(button => {
+                button.addEventListener('click', event => {
+                    event.preventDefault();
+                    const bookId = button.getAttribute('data-book-id');
+
+                    fetch(`/api/v1/delete_book/${bookId}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            alert(data.message);
+                        } else if (data.error) {
+                            alert(`Ошибка: ${data.error}`);
+                        }
+                    })
+                    
+                    .catch(error => {
+                        console.error('Ошибка при удалении книги:', error);
+                    });
+                });
+            });
     </script>
 {% endblock %}
 </body>

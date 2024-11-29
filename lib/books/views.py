@@ -1,6 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
+from django.db.models import Q
+from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.views import APIView, View
 from rest_framework.response import Response
@@ -11,6 +13,7 @@ from .models import Book, UserBooks
 from .serializers import BookSerializer, RegisterSerializer
 from .decorators import jwt_required
 from .forms import BookForm
+import json
 
 
 class BookAPIViewPagination(PageNumberPagination):
@@ -27,11 +30,11 @@ class BookAPIView(generics.ListCreateAPIView):
     pagination_class = BookAPIViewPagination
 
 
-class BookAPIUpdateView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = UserBooks.objects.all()
-    serializer_class = BookSerializer
-    authentication_classes = (JWTAuthentication, )
-    permission_classes = (IsAuthenticated, )
+# class BookAPIUpdateView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = UserBooks.objects.all()
+#     serializer_class = BookSerializer
+#     authentication_classes = (JWTAuthentication, )
+#     permission_classes = (IsAuthenticated, )
 
 
 class AddToCollectionAPIView(APIView):
@@ -42,10 +45,25 @@ class AddToCollectionAPIView(APIView):
         try:
             book = Book.objects.get(id=book_id)
             UserBooks.objects.get_or_create(user=user, book=book)
-            return Response({"message": "Книга успешно добавлена в коллекцию!"}, status=201)
+            return Response({"message": "Книга успешно добавлена в коллекцию!\nПерезагрузите страницу."}, status=201)
         except Book.DoesNotExist:
-            return Response({"error": "Книга не найдена"}, status=404)
+            return Response({"error": "Книга не найдена."}, status=404)
         
+
+class RemoveFromCollectionAPIView(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def delete(self, request, book_id):
+        user = request.user
+        book = get_object_or_404(Book, id=book_id)
+        
+        user_book = UserBooks.objects.filter(user=user, book=book).first()
+        if user_book:
+            user_book.delete()
+            return Response({"message": "Книга успешно удалена из коллекции!\nПерезагрузите страницу."}, status=200)
+        else:
+            return Response({"error": "Книга не найдена в коллекции."}, status=404)
+
 
 class RegisterView(generics.ListCreateAPIView):
     queryset = User.objects.all()
@@ -62,7 +80,7 @@ class RegisterView(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Регистрация прошла успешно"}, status=201)
+            return Response({"message": "Регистрация прошла успешно!"}, status=201)
         print(serializer.errors)
         return Response(serializer.errors, status=400)
 
@@ -93,7 +111,7 @@ def BooksView(request):
         return redirect('/login/') 
 
     books = Book.objects.all()
-    return render(request, 'allbooks.html', {'books': books, 'title': 'Все книги'})
+    return render(request, 'allbooks.html', {'books': books, 'user': user, 'title': 'Все книги'})
 
 
 @jwt_required
@@ -110,7 +128,8 @@ def UserBooksView(request):
     user_books = UserBooks.objects.filter(user=user).select_related('book')
     return render(request, 'mybooks.html', {
         'title': 'Мои книги',
-        'user_books': [user_book.book for user_book in user_books]
+        'user_books': [user_book.book for user_book in user_books],
+        'user': user,
     })
 
 
@@ -150,3 +169,89 @@ class AddBooksView(View):
             return redirect('/authenticated/')  
 
         return render(request, self.template_name, {'form': form, 'title': 'Добавление книги'})
+    
+
+@jwt_required
+def SearchBooksView(request):
+    jwt_authenticator = JWTAuthentication()
+    try:
+        user, _ = jwt_authenticator.authenticate(request)
+    except Exception:
+        return redirect('/login/')  
+
+    if not user or user.is_anonymous:
+        return redirect('/login/') 
+
+    query = request.GET.get('title', '')  
+    books = []
+
+    if query:  
+        books = Book.objects.filter(Q(name__icontains=query))  
+
+    return render(request, 'search.html', {
+        'title': 'Поиск',
+        'books': books,
+        'query': query
+    })
+
+
+@method_decorator(jwt_required, name='dispatch')
+class UpdateBooksView(View):
+    template_name = 'updatebooks.html'
+
+    def get(self, request, book_id):
+        jwt_authenticator = JWTAuthentication()
+        try:
+            user, _ = jwt_authenticator.authenticate(request)
+        except Exception:
+            return redirect('/login/')
+
+        if not user or user.is_anonymous:
+            return redirect('/login/')
+
+        book = get_object_or_404(Book, id=book_id, user=user)
+        form = BookForm(instance=book)  
+
+        return render(request, self.template_name, {'form': form, 'title': 'Обновление книги', 'book': book})
+
+    def post(self, request, book_id):
+        jwt_authenticator = JWTAuthentication()
+        try:
+            user, _ = jwt_authenticator.authenticate(request)
+        except Exception:
+            return redirect('/login/')
+
+        if not user or user.is_anonymous:
+            return redirect('/login/')
+
+        book = get_object_or_404(Book, id=book_id, user=user)
+
+        form = BookForm(request.POST, instance=book)
+        if form.is_valid():
+            form.save()
+            return redirect('/authenticated/')  
+        else:
+            return render(request, self.template_name, {
+                'form': form,
+                'title': 'Обновление книги',
+                'errors': form.errors,
+                'book': book,
+            })
+
+
+class DeleteBookAPIView(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def delete(self, request, book_id):
+        user = request.user
+        book = get_object_or_404(Book, id=book_id)
+        
+        user_book = UserBooks.objects.filter(user=user, book=book).first()
+        if user_book:
+            user_book.delete()
+
+        if book:
+            book.delete()
+            return Response({"message": "Книга успешно удалена!\nПерезагрузите страницу."}, status=200)
+        else:
+            return Response({"error": "Книга не найдена."}, status=404)
