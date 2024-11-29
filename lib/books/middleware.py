@@ -20,7 +20,6 @@ class JWTAuthCookieMiddleware(MiddlewareMixin):
                 refresh = RefreshToken(refresh_token)
                 new_access_token = str(refresh.access_token)
 
-                # Обновляем access_token в cookies
                 request.COOKIES['access_token'] = new_access_token
                 request.META['HTTP_AUTHORIZATION'] = f'Bearer {new_access_token}'
             except Exception as e:

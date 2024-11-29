@@ -2,18 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from django.db.models import Q
-from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.views import APIView, View
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import Book, UserBooks
 from .serializers import BookSerializer, RegisterSerializer
 from .decorators import jwt_required
 from .forms import BookForm
-import json
 
 
 class BookAPIViewPagination(PageNumberPagination):
@@ -28,13 +26,6 @@ class BookAPIView(generics.ListCreateAPIView):
     authentication_classes = (JWTAuthentication, )
     permission_classes = (IsAuthenticatedOrReadOnly, )
     pagination_class = BookAPIViewPagination
-
-
-# class BookAPIUpdateView(generics.RetrieveUpdateDestroyAPIView):
-#     queryset = UserBooks.objects.all()
-#     serializer_class = BookSerializer
-#     authentication_classes = (JWTAuthentication, )
-#     permission_classes = (IsAuthenticated, )
 
 
 class AddToCollectionAPIView(APIView):
@@ -160,7 +151,6 @@ class AddBooksView(View):
         if not user or user.is_anonymous:
             return redirect('/login/')
 
-        # Обработка отправки формы
         form = BookForm(request.POST)
         if form.is_valid():
             book = form.save(commit=False)

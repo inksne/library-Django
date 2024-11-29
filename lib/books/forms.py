@@ -23,5 +23,5 @@ class BookForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'placeholder': 'Введите описание', 'style': 'color: black;'}),
             'content': forms.Textarea(attrs={'placeholder': 'Введите содержание', 'style': 'color: black;'}),
             'language': forms.TextInput(attrs={'placeholder': 'Введите язык книги', 'style': 'color: black;'}),
-            'published_date': forms.TextInput(attrs={'placeholder': 'YYYY-MM-DD', 'style': 'color: black;'}),
+            'published_date': forms.TextInput(attrs={'placeholder': 'ГГГГ-ММ-ДД', 'style': 'color: black;'}),
         }
