@@ -3,7 +3,6 @@ from .views import *
 from .auth import *
 
 urlpatterns = [
-    path('authenticated/bookslist/', BookAPIView.as_view(), name='bookslist'),
     path('authenticated/bookslist/<int:book_id>/', UpdateBooksView.as_view(), name='update_book'),
     path('api/v1/auth/', include('djoser.urls')),
     re_path(r'^auth/', include('djoser.urls.authtoken')),
