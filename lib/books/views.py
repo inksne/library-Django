@@ -9,23 +9,9 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import Book, UserBooks
-from .serializers import BookSerializer, RegisterSerializer
+from .serializers import RegisterSerializer
 from .decorators import jwt_required
 from .forms import BookForm
-
-
-class BookAPIViewPagination(PageNumberPagination):
-    page_size = 5
-    page_size_query_param = 'page_size'
-    max_page_size = 10000
-
-
-class BookAPIView(generics.ListCreateAPIView):
-    queryset = Book.objects.all()
-    serializer_class = BookSerializer
-    authentication_classes = (JWTAuthentication, )
-    permission_classes = (IsAuthenticatedOrReadOnly, )
-    pagination_class = BookAPIViewPagination
 
 
 class AddToCollectionAPIView(APIView):
