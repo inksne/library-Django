@@ -3,12 +3,6 @@ from django.contrib.auth.models import User
 
 from .models import Book
 
-class BookSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    class Meta:
-        model = Book
-        fields = ['id', 'user', 'name', 'author', 'publisher', 'description', 'content', 'language']
-
 
 class RegisterSerializer(serializers.ModelSerializer):
 
