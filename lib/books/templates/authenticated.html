@@ -265,6 +265,7 @@
             }
         }
 
+        // обновление токена
         async function refreshToken() {
             try {
                 console.log("Попытка обновления токена...");
@@ -351,6 +352,7 @@
             console.warn("Ни Access, ни Refresh токена не найдено. Требуется авторизация.");
         }
 
+        // удаление книги
         const removeButtons = document.querySelectorAll('.delete_book');
             removeButtons.forEach(button => {
                 button.addEventListener('click', event => {
