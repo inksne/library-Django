@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-from config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
+from config import DB_NAME, DB_PASS, DB_USER
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-kfwk=24(24b5_z-^c__&9!23p_dxi@63vbtwb)z1^7ofcre@a2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 CORS_ALLOW_CREDENTIALS = True
@@ -88,8 +88,8 @@ DATABASES = {
         'NAME': f'{DB_NAME}',
         'USER': f'{DB_USER}',
         'PASSWORD': f'{DB_PASS}',
-        'HOST': f'{DB_HOST}',
-        'PORT': f'{DB_PORT}',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
