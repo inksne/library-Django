@@ -70,7 +70,7 @@
                     <p class="author">Автор: {{ book.author }}</p>
                     <p class="published_date">Дата публикации: {{ book.published_date }}</p>
                     <p>Описание: {{ book.description }}</p>
-                    <a href="{% url 'bookslist' %}">Читать полностью</a>
+                    <button class="read-more" data-book-id="{{ book.id }}" data-book-content="{{ book.content }}">Читать полностью</button>
                     <button class="add-to-collection" data-book-id="{{ book.id }}">Добавить в коллекцию</button>
                 </div>
             {% endfor %}
@@ -82,4 +82,36 @@
 {% endblock %}
 {% block scripts %}
     {{ block.super }}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // обработка клика по кнопке "Читать полностью"
+            const readMoreButtons = document.querySelectorAll('.read-more');
+            const modal = document.getElementById('bookModal');
+            const modalTitle = document.getElementById('modalBookTitle');
+            const modalContent = document.getElementById('modalBookContent');
+            const closeModal = document.querySelector('.close');
+    
+            readMoreButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const bookTitle = button.parentElement.querySelector('h2').innerText;
+                    const bookContent = button.getAttribute('data-book-content');
+                    
+                    modalTitle.innerText = bookTitle;
+                    modalContent.innerText = bookContent || 'Содержимое недоступно.';
+    
+                    modal.style.display = 'block'; 
+                });
+            });
+    
+            closeModal.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+    
+            window.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    </script>
 {% endblock %}
